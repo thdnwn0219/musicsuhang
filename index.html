@@ -370,42 +370,29 @@
         </div>
     </div>
 
-    <audio id="audioPlayer" preload="none"></audio>
+    <audio id="audioPlayer" preload="auto"></audio>
 
     <script>
         // 음악 파일 URL 설정
         // GitHub Pages 저장소의 'music' 폴더 내에 있는 파일들을 연결합니다.
         // 파일 이름과 정확히 일치해야 합니다. (띄어쓰기, 한글 등)
         // 같은 저장소에 HTML 파일과 music 폴더가 함께 있을 경우 상대 경로를 사용합니다.
-        const musicFiles = [
-            './music/1. 고대 - 세이킬로스의 노래.mp3',
-            './music/2. 중세 - 그레고리오 성가의 키리에.mp3', 
-            './music/3. 르네상스 - 조스캥의 아베마리아.mp3',
-            './music/4. 르네상스 - 팔레스트리나의 마르첼로 미사 중 제5곡 아뉴스 데이 Ⅰ.mp3',
-            './music/5. 바로크 - 비발디 사계 中 봄 1악장 Allegro.mp3',
-            './music/6. 바로크 - 바흐의 토카타와 푸가 라단조.mp3',
-            './music/7. 바로크 - 헨델의 메시아 中 할렐루야.mp3',
-            './music/8. 고전주의 - 하이든의 놀람 교향곡 중 2악장.mp3',
-            './music/9. 고전주의 - 모차르트의 호른 협주곡 제2번 중 3악장.mp3',
-            './music/10. 고전주의 - 베토벤의 월광 소나타 중 1악장.mp3',
-            './music/11. 낭만주의 - 슈베르트의 겨울 나그네 중 제5번 보리수.mp3'
-        ];
-        
-        // 각 파일의 실제 이름 (플레이리스트에 표시될 이름)
-        // musicFiles 배열의 순서와 정확히 일치해야 합니다.
         const musicTitles = [
-            '고대 - 세이킬로스의 노래',
-            '중세 - 그레고리오 성가의 키리에', 
-            '르네상스 - 조스캥의 아베마리아',
-            '르네상스 - 팔레스트리나의 마르첼로 미사 중 제5곡 아뉴스 데이 Ⅰ',
-            '바로크 - 비발디 사계 中 봄 1악장 Allegro',
-            '바로크 - 바흐의 토카타와 푸가 라단조',
-            '바로크 - 헨델의 메시아 中 할렐루야',
-            '고전주의 - 하이든의 놀람 교향곡 중 2악장',
-            '고전주의 - 모차르트의 호른 협주곡 제2번 중 3악장',
-            '고전주의 - 베토벤의 월광 소나타 중 1악장',
-            '낭만주의 - 슈베르트의 겨울 나그네 중 제5번 보리수'
+            '1. 고대 - 세이킬로스의 노래',
+            '2. 중세 - 그레고리오 성가의 키리에', 
+            '3. 르네상스 - 조스캥의 아베마리아',
+            '4. 르네상스 - 팔레스트리나의 마르첼로 미사 중 제5곡 아뉴스 데이 Ⅰ',
+            '5. 바로크 - 비발디 사계 中 봄 1악장 Allegro',
+            '6. 바로크 - 바흐의 토카타와 푸가 라단조',
+            '7. 바로크 - 헨델의 메시아 中 할렐루야',
+            '8. 고전주의 - 하이든의 놀람 교향곡 중 2악장',
+            '9. 고전주의 - 모차르트의 호른 협주곡 제2번 중 3악장',
+            '10. 고전주의 - 베토벤의 월광 소나타 중 1악장',
+            '11. 낭만주의 - 슈베르트의 겨울 나그네 중 제5번 보리수'
         ];
+
+        // musicFiles 배열은 musicTitles의 각 항목에 '.mp3'를 붙여 파일 경로를 생성합니다.
+        const musicFiles = musicTitles.map(title => `./music/${encodeURIComponent(title)}.mp3`);
 
         let currentMode = 'sequential';
         let currentTrack = -1;
@@ -442,7 +429,7 @@
         // 플레이리스트 생성
         function createPlaylist() {
             playlist.innerHTML = '';
-            musicTitles.forEach((title, index) => { // musicFiles 대신 musicTitles 사용
+            musicTitles.forEach((title, index) => {
                 const item = document.createElement('div');
                 item.className = 'playlist-item';
                 item.innerHTML = `
@@ -457,7 +444,7 @@
         // 트랙 재생
         async function playTrack(index) {
             if (loadingTrack) return;
-            if (index < 0 || index >= musicFiles.length) { // 유효성 검사 추가
+            if (index < 0 || index >= musicFiles.length) {
                 console.error("유효하지 않은 트랙 인덱스입니다:", index);
                 showMessage('재생할 곡이 없습니다.', 'error');
                 return;
@@ -468,32 +455,27 @@
             const fileUrl = musicFiles[index];
             const trackTitle = musicTitles[index] || `알 수 없는 곡 ${index + 1}`;
             
-            // 플레이리스트 항목 로딩 상태 표시
             updatePlaylistHighlight();
             const playlistItem = playlist.children[index];
-            playlistItem.classList.add('loading');
+            if(playlistItem) playlistItem.classList.add('loading'); // playlistItem이 있을 때만 클래스 추가
             
             showMessage(`"${trackTitle}"을(를) 불러오는 중...`, 'loading');
             
             try {
-                // 오디오 소스 설정
                 audioPlayer.src = fileUrl;
                 audioPlayer.load();
                 
-                // 오디오 로드 대기
                 await new Promise((resolve, reject) => {
                     const onCanPlay = () => {
                         audioPlayer.removeEventListener('canplaythrough', onCanPlay);
                         audioPlayer.removeEventListener('error', onError);
-                        console.log('음악 파일 로드 완료:', fileUrl);
                         resolve();
                     };
                     
                     const onError = (e) => {
                         audioPlayer.removeEventListener('canplaythrough', onCanPlay);
                         audioPlayer.removeEventListener('error', onError);
-                        console.error('음악 파일 로드 실패:', fileUrl, e);
-                        reject(new Error('파일을 불러올 수 없습니다. URL을 확인하세요.'));
+                        reject(new Error(`파일을 불러올 수 없습니다. (${e.message || e.code})`));
                     };
                     
                     audioPlayer.addEventListener('canplaythrough', onCanPlay);
@@ -501,14 +483,15 @@
                     
                     // 로딩 타임아웃
                     setTimeout(() => {
-                        console.log('음악 로딩 타임아웃');
-                        onError(new Error('로딩 시간이 초과되었습니다.'));
+                        if (!audioPlayer.readyState >= 3) { // HAVE_FUTURE_DATA
+                           onError(new Error('로딩 시간이 초과되었습니다.'));
+                        }
                     }, 15000); // 15초 타임아웃
                 });
                 
                 updateSongDisplay();
-                playlistItem.classList.remove('loading');
-                messageContainer.innerHTML = ''; // 성공 시 메시지 제거
+                if(playlistItem) playlistItem.classList.remove('loading');
+                messageContainer.innerHTML = ''; 
                 
                 if (currentMode !== 'pause') {
                     await audioPlayer.play();
@@ -519,32 +502,36 @@
                 
             } catch (error) {
                 console.error('재생 오류:', error);
-                playlistItem.classList.remove('loading');
-                playlistItem.classList.add('error');
+                if(playlistItem) {
+                    playlistItem.classList.remove('loading');
+                    playlistItem.classList.add('error');
+                }
                 
                 let errorMessage = '파일을 재생할 수 없습니다';
-                if (error.message.includes('URL')) {
-                    errorMessage = '음악 파일 URL을 확인하세요.';
+                if (error.message.includes('URL') || error.message.includes('Network')) {
+                    errorMessage = '음악 파일을 찾거나 불러올 수 없습니다. 경로를 확인하세요.';
                 } else if (error.message.includes('타임아웃')) {
-                    errorMessage = '로딩 시간이 초과되었습니다.';
+                    errorMessage = '로딩 시간이 초과되었습니다. 네트워크 상태를 확인하세요.';
+                } else if (error.message.includes('play()')) {
+                    errorMessage = '자동 재생이 차단되었습니다. 재생 버튼을 눌러주세요.';
                 }
                 
                 showMessage(`${errorMessage}: "${trackTitle}"`, 'error');
                 
-                // 다음 곡으로 자동 이동 (순차 재생 모드에서)
+                // 에러 발생 시 다음 곡으로 자동 이동 (순차/랜덤 모드에서)
                 if (currentMode === 'sequential' && index < musicFiles.length - 1) {
-                    setTimeout(() => {
-                        playTrack(index + 1);
-                    }, 2000);
+                    setTimeout(() => { playTrack(index + 1); }, 2000);
                 } else if (currentMode === 'random' && musicFiles.length > 1) {
-                    // 랜덤 모드에서도 다음 곡으로 이동 (무한 루프 방지를 위해 최소 2곡 이상일 때)
-                    setTimeout(() => {
-                        playNext();
-                    }, 2000);
+                    setTimeout(() => { playNext(); }, 2000);
+                } else {
+                    // 더 이상 재생할 곡이 없거나 마지막 곡인 경우
+                    isPlaying = false;
+                    playPauseBtn.textContent = '▶';
+                    playPauseBtn.disabled = false; // 다시 활성화하여 수동 재생 시도 가능하게 함
                 }
+            } finally {
+                loadingTrack = false;
             }
-            
-            loadingTrack = false;
         }
 
         // 송 디스플레이 업데이트
@@ -573,7 +560,7 @@
         function updatePlaylistHighlight() {
             const items = playlist.querySelectorAll('.playlist-item');
             items.forEach((item, index) => {
-                item.classList.remove('active', 'error', 'loading'); // 로딩 클래스도 제거
+                item.classList.remove('active', 'error', 'loading');
                 if (index === currentTrack) {
                     item.classList.add('active');
                 }
@@ -582,7 +569,7 @@
 
         // 시간 포맷 함수
         function formatTime(seconds) {
-            if (isNaN(seconds)) return '0:00';
+            if (isNaN(seconds) || !isFinite(seconds)) return '0:00'; // NaN 또는 Infinity 처리
             const minutes = Math.floor(seconds / 60);
             const secs = Math.floor(seconds % 60);
             return `${minutes}:${secs.toString().padStart(2, '0')}`;
@@ -594,15 +581,13 @@
             
             let nextTrack;
             if (isRandomMode) {
-                // 아직 공개되지 않은 트랙 중에서 랜덤 선택
                 const unrevealedTracks = Array.from({ length: musicFiles.length }, (_, i) => i)
                                              .filter(i => !revealedCards.has(i));
                 if (unrevealedTracks.length > 0) {
                     nextTrack = unrevealedTracks[Math.floor(Math.random() * unrevealedTracks.length)];
                 } else {
-                    // 모든 트랙이 공개되었으면, 전체 중에서 랜덤 선택하고 카드 리셋
                     nextTrack = Math.floor(Math.random() * musicFiles.length);
-                    revealedCards.clear(); // 모든 카드를 다시 숨김
+                    revealedCards.clear(); 
                     showMessage('모든 곡을 들었습니다. 랜덤 모드를 다시 시작합니다!', 'info');
                 }
             } else {
@@ -628,7 +613,7 @@
 
             // 재생/일시정지 버튼
             playPauseBtn.addEventListener('click', async () => {
-                if (currentMode === 'pause' || currentTrack === -1) return;
+                if (currentMode === 'pause') return;
                 
                 try {
                     if (isPlaying) {
@@ -636,8 +621,8 @@
                         playPauseBtn.textContent = '▶';
                         isPlaying = false;
                     } else {
-                        // 현재 트랙이 없으면 첫 곡 재생
-                        if (audioPlayer.src === '' || audioPlayer.paused && audioPlayer.currentTime === 0) {
+                        // 현재 트랙이 없거나 재생이 멈춰있으면 (처음 재생 또는 완전히 끝난 후)
+                        if (currentTrack === -1 || audioPlayer.paused && audioPlayer.currentTime === 0) {
                             playTrack(0); // 첫 곡 재생 시도
                         } else {
                             await audioPlayer.play();
@@ -647,7 +632,11 @@
                     }
                 } catch (error) {
                     console.error('재생/정지 오류:', error);
-                    showMessage('재생 중 오류가 발생했습니다.', 'error');
+                    if (error.name === "NotAllowedError") {
+                        showMessage('자동 재생이 차단되었습니다. 재생 버튼을 눌러주세요.', 'error');
+                    } else {
+                        showMessage('재생 중 오류가 발생했습니다.', 'error');
+                    }
                 }
             });
 
@@ -658,7 +647,7 @@
 
             // 오디오 이벤트들
             audioPlayer.addEventListener('timeupdate', () => {
-                if (audioPlayer.duration) {
+                if (audioPlayer.duration && isFinite(audioPlayer.duration)) {
                     const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
                     progressBar.style.width = progress + '%';
                     timeDisplay.textContent = formatTime(audioPlayer.currentTime);
@@ -672,10 +661,17 @@
             });
 
             audioPlayer.addEventListener('error', (e) => {
-                console.error('오디오 오류:', e);
+                console.error('오디오 오류 발생:', e.target.error.code, e.target.error.message);
                 isPlaying = false;
                 playPauseBtn.textContent = '▶';
-                showMessage('음악 재생 중 오류가 발생했습니다. 파일이 유효한지 확인하세요.', 'error');
+                let errorMsg = '음악 재생 중 알 수 없는 오류가 발생했습니다.';
+                switch (e.target.error.code) {
+                    case 1: errorMsg = "음악 로딩이 중단되었습니다."; break; // MEDIA_ERR_ABORTED
+                    case 2: errorMsg = "네트워크 오류로 음악을 불러올 수 없습니다."; break; // MEDIA_ERR_NETWORK
+                    case 3: errorMsg = "음악 디코딩 중 오류가 발생했습니다. 파일이 손상되었을 수 있습니다."; break; // MEDIA_ERR_DECODE
+                    case 4: errorMsg = "음악 형식이 지원되지 않습니다. 파일을 확인하세요."; break; // MEDIA_ERR_SRC_NOT_SUPPORTED
+                }
+                showMessage(errorMsg, 'error');
             });
 
             audioPlayer.addEventListener('loadstart', () => {
@@ -688,7 +684,7 @@
 
             // 진행 바 클릭으로 시간 이동
             progressContainer.addEventListener('click', (e) => {
-                if (audioPlayer.duration) {
+                if (audioPlayer.duration && isFinite(audioPlayer.duration)) {
                     const rect = e.currentTarget.getBoundingClientRect();
                     const clickX = e.clientX - rect.left;
                     const percentage = clickX / rect.width;
@@ -728,11 +724,11 @@
             updateSongDisplay();
             setupEventListeners();
             
-            // 파일 URL이 올바르게 설정되었는지 확인하는 메시지
-            // 상대 경로를 사용하므로, 파일이 존재하는지 직접 확인하기 어렵습니다.
-            // 대신, musicFiles 배열이 비어있지 않은지 확인합니다.
+            // 초기에는 재생 버튼 비활성화 (사용자 상호작용 필요)
+            playPauseBtn.disabled = false; // "play_arrow" 상태에서 활성화
+            
             if (musicFiles.length > 0) {
-                showMessage('음악 파일을 불러올 준비가 되었습니다.', 'loading');
+                showMessage('재생할 곡을 선택하거나 재생 버튼을 눌러주세요.', 'info');
             } else {
                 showMessage('⚠️ 음악 파일 목록이 비어있습니다. 파일 경로를 확인해주세요.', 'error');
             }
