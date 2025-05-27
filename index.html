@@ -175,12 +175,19 @@
             transform: scale(1.1);
         }
 
+        .play-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .progress-container {
             flex: 1;
             height: 6px;
             background: #ddd;
             border-radius: 3px;
             overflow: hidden;
+            cursor: pointer;
         }
 
         .progress-bar {
@@ -223,6 +230,16 @@
             color: white;
         }
 
+        .playlist-item.loading {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+
+        .playlist-item.error {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }
+
         .track-number {
             background: #e0e0e0;
             color: #666;
@@ -239,6 +256,26 @@
         .playlist-item.active .track-number {
             background: rgba(255, 255, 255, 0.2);
             color: white;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .loading-message {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            text-align: center;
+            font-size: 14px;
         }
 
         .bottom-text {
@@ -270,6 +307,16 @@
         .flipping {
             animation: flip 0.6s ease-in-out;
         }
+
+        @media (max-width: 480px) {
+            .controls {
+                flex-direction: column;
+            }
+            
+            .control-btn {
+                min-width: unset;
+            }
+        }
     </style>
 </head>
 <body>
@@ -277,7 +324,7 @@
         <div class="header">
             <div class="year-text">2025년 서양음악사 + 감상 수행평가</div>
             <div class="logo-container">
-                <img src="./images/musicsuhang-logo.png" alt="musicsuhang" class="logo-img">
+                <img src="./images/musicsuhang-logo.png" alt="musicsuhang" class="logo-img" onerror="this.style.display='none'">
             </div>
             <div class="subtitle">수행곡 연속재생</div>
         </div>
@@ -306,6 +353,8 @@
                     </div>
                 </div>
 
+                <div id="messageContainer"></div>
+
                 <div class="playlist" id="playlist">
                     <!-- 플레이리스트 항목들이 여기에 동적으로 추가됩니다 -->
                 </div>
@@ -321,37 +370,64 @@
         </div>
     </div>
 
-    <audio id="audioPlayer"></audio>
+    <audio id="audioPlayer" preload="none"></audio>
 
     <script>
-        // 여기에 GitHub 폴더의 음악 파일 목록을 입력하세요
+        // GitHub Raw 파일 링크 설정
+        // 사용법: GitHub 저장소에 음악 파일 업로드 후, Raw 링크를 아래에 추가하세요
+        // 예: https://raw.githubusercontent.com/사용자명/저장소명/main/music/파일명.mp3
+        
+        const GITHUB_BASE_URL = 'https://raw.githubusercontent.com/사용자명/저장소명/main/music/';
+        
+        // 음악 파일 목록 (GitHub에 업로드된 실제 파일명으로 교체하세요)
         const musicFiles = [
-            '1. 클래식곡1.mp3',
-            '2. 클래식곡2.mp3', 
-            '3. 클래식곡3.mp3',
-            '4. 클래식곡4.mp3',
-            '5. 클래식곡5.mp3'
-            // 실제 파일명으로 교체하세요
+            GITHUB_BASE_URL + '1. 클래식곡1.mp3',
+            GITHUB_BASE_URL + '2. 클래식곡2.mp3', 
+            GITHUB_BASE_URL + '3. 클래식곡3.mp3',
+            GITHUB_BASE_URL + '4. 클래식곡4.mp3',
+            GITHUB_BASE_URL + '5. 클래식곡5.mp3'
         ];
+        
+        // 또는 직접 GitHub Raw 링크를 사용하는 방법:
+        /*
+        const musicFiles = [
+            'https://raw.githubusercontent.com/사용자명/저장소명/main/music/Bach - Air on G String.mp3',
+            'https://raw.githubusercontent.com/사용자명/저장소명/main/music/Mozart - Eine kleine Nachtmusik.mp3',
+            'https://raw.githubusercontent.com/사용자명/저장소명/main/music/Beethoven - Symphony No.9.mp3'
+        ];
+        */
 
         let currentMode = 'sequential';
-        let currentTrack = 0;
+        let currentTrack = -1;
         let isPlaying = false;
         let isRandomMode = false;
         let revealedCards = new Set();
+        let loadingTrack = false;
 
         const audioPlayer = document.getElementById('audioPlayer');
         const songCard = document.getElementById('songCard');
         const songTitle = document.getElementById('songTitle');
         const playPauseBtn = document.getElementById('playPauseBtn');
         const progressBar = document.getElementById('progressBar');
+        const progressContainer = document.getElementById('progressContainer');
         const timeDisplay = document.getElementById('timeDisplay');
         const playlist = document.getElementById('playlist');
+        const messageContainer = document.getElementById('messageContainer');
 
         // 버튼 참조
         const sequentialBtn = document.getElementById('sequentialBtn');
         const pauseBtn = document.getElementById('pauseBtn');
         const randomBtn = document.getElementById('randomBtn');
+
+        // 메시지 표시 함수
+        function showMessage(message, type = 'info') {
+            messageContainer.innerHTML = `<div class="${type === 'error' ? 'error-message' : 'loading-message'}">${message}</div>`;
+            if (type !== 'error') {
+                setTimeout(() => {
+                    messageContainer.innerHTML = '';
+                }, 3000);
+            }
+        }
 
         // 플레이리스트 생성
         function createPlaylist() {
@@ -361,11 +437,16 @@
                 item.className = 'playlist-item';
                 item.innerHTML = `
                     <div class="track-number">${index + 1}</div>
-                    <div>${removeTrackNumber(file)}</div>
+                    <div>${removeTrackNumber(getFileName(file))}</div>
                 `;
                 item.addEventListener('click', () => playTrack(index));
                 playlist.appendChild(item);
             });
+        }
+
+        // 파일명에서 경로 제거
+        function getFileName(filePath) {
+            return filePath.split('/').pop();
         }
 
         // 트랙 번호 제거 함수
@@ -373,28 +454,131 @@
             return filename.replace(/^\d+\.\s*/, '').replace(/\.[^/.]+$/, '');
         }
 
+        // GitHub Raw 링크 유효성 검사
+        async function validateGitHubUrl(url) {
+            try {
+                const response = await fetch(url, { method: 'HEAD' });
+                return response.ok;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        // 오디오 로드 확인
+        function checkAudioLoad(src) {
+            return new Promise((resolve, reject) => {
+                const testAudio = new Audio();
+                testAudio.addEventListener('canplaythrough', () => resolve(true));
+                testAudio.addEventListener('error', () => reject(false));
+                testAudio.addEventListener('loadstart', () => {
+                    // GitHub에서 로딩 시작
+                    console.log('GitHub에서 음악 파일 로딩 중:', src);
+                });
+                testAudio.src = src;
+                testAudio.load();
+            });
+        }
+
         // 트랙 재생
-        function playTrack(index) {
+        async function playTrack(index) {
+            if (loadingTrack) return;
+            
+            loadingTrack = true;
             currentTrack = index;
             const file = musicFiles[index];
-            audioPlayer.src = file; // 상대경로 사용
             
-            updateSongDisplay();
+            // 플레이리스트 항목 로딩 상태 표시
             updatePlaylistHighlight();
+            const playlistItem = playlist.children[index];
+            playlistItem.classList.add('loading');
             
-            if (currentMode !== 'pause') {
-                audioPlayer.play().catch(e => {
-                    console.error('재생 오류:', e);
-                    alert('음악 파일을 불러올 수 없습니다. 파일 경로를 확인해주세요.');
+            showMessage('GitHub에서 음악을 불러오는 중...', 'loading');
+            
+            try {
+                // GitHub URL 유효성 먼저 확인
+                console.log('GitHub URL 확인 중:', file);
+                const isValidUrl = await validateGitHubUrl(file);
+                
+                if (!isValidUrl) {
+                    throw new Error('GitHub 파일에 접근할 수 없습니다. URL을 확인하세요.');
+                }
+                
+                // 오디오 소스 설정
+                audioPlayer.src = file;
+                audioPlayer.load();
+                
+                // 오디오 로드 대기 (GitHub에서 로딩하므로 시간이 더 걸릴 수 있음)
+                await new Promise((resolve, reject) => {
+                    const onCanPlay = () => {
+                        audioPlayer.removeEventListener('canplaythrough', onCanPlay);
+                        audioPlayer.removeEventListener('error', onError);
+                        console.log('GitHub 음악 파일 로드 완료:', file);
+                        resolve();
+                    };
+                    
+                    const onError = (e) => {
+                        audioPlayer.removeEventListener('canplaythrough', onCanPlay);
+                        audioPlayer.removeEventListener('error', onError);
+                        console.error('GitHub 음악 파일 로드 실패:', file, e);
+                        reject(new Error('GitHub에서 파일을 불러올 수 없습니다'));
+                    };
+                    
+                    audioPlayer.addEventListener('canplaythrough', onCanPlay);
+                    audioPlayer.addEventListener('error', onError);
+                    
+                    // GitHub 로딩을 위한 더 긴 타임아웃 (20초)
+                    setTimeout(() => {
+                        console.log('GitHub 로딩 타임아웃');
+                        onError(new Error('로딩 타임아웃'));
+                    }, 20000);
                 });
-                isPlaying = true;
-                playPauseBtn.textContent = '⏸';
+                
+                updateSongDisplay();
+                playlistItem.classList.remove('loading');
+                messageContainer.innerHTML = '';
+                
+                if (currentMode !== 'pause') {
+                    await audioPlayer.play();
+                    isPlaying = true;
+                    playPauseBtn.textContent = '⏸';
+                    playPauseBtn.disabled = false;
+                }
+                
+            } catch (error) {
+                console.error('재생 오류:', error);
+                playlistItem.classList.remove('loading');
+                playlistItem.classList.add('error');
+                
+                let errorMessage = '파일을 재생할 수 없습니다';
+                if (error.message.includes('GitHub')) {
+                    errorMessage = 'GitHub 파일 로드 실패: URL을 확인하세요';
+                } else if (error.message.includes('타임아웃')) {
+                    errorMessage = '로딩 시간이 초과되었습니다';
+                }
+                
+                showMessage(`${errorMessage}: ${getFileName(file)}`, 'error');
+                
+                // 다음 곡으로 자동 이동 (순차 재생 모드에서)
+                if (currentMode === 'sequential' && index < musicFiles.length - 1) {
+                    setTimeout(() => {
+                        playTrack(index + 1);
+                    }, 2000);
+                }
             }
+            
+            loadingTrack = false;
         }
 
         // 송 디스플레이 업데이트
         function updateSongDisplay() {
-            const filename = musicFiles[currentTrack];
+            if (currentTrack === -1) {
+                songTitle.textContent = '재생할 곡을 선택하세요';
+                songTitle.className = 'song-title';
+                songCard.className = 'song-card';
+                return;
+            }
+            
+            const filename = getFileName(musicFiles[currentTrack]);
             const cleanTitle = removeTrackNumber(filename);
             
             if (isRandomMode && !revealedCards.has(currentTrack)) {
@@ -412,49 +596,116 @@
         function updatePlaylistHighlight() {
             const items = playlist.querySelectorAll('.playlist-item');
             items.forEach((item, index) => {
-                item.classList.toggle('active', index === currentTrack);
+                item.classList.remove('active', 'error');
+                if (index === currentTrack) {
+                    item.classList.add('active');
+                }
             });
         }
 
-        // 카드 클릭 (랜덤 모드에서 제목 공개)
-        songCard.addEventListener('click', () => {
-            if (isRandomMode && !revealedCards.has(currentTrack)) {
-                songCard.classList.add('flipping');
-                setTimeout(() => {
-                    revealedCards.add(currentTrack);
-                    updateSongDisplay();
-                    songCard.classList.remove('flipping');
-                }, 300);
-            }
-        });
+        // 시간 포맷 함수
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return '0:00';
+            const minutes = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${minutes}:${secs.toString().padStart(2, '0')}`;
+        }
 
-        // 재생/일시정지 버튼
-        playPauseBtn.addEventListener('click', () => {
+        // 다음 곡 재생
+        function playNext() {
             if (currentMode === 'pause') return;
             
-            if (isPlaying) {
-                audioPlayer.pause();
-                playPauseBtn.textContent = '▶';
+            let nextTrack;
+            if (isRandomMode) {
+                nextTrack = Math.floor(Math.random() * musicFiles.length);
             } else {
-                audioPlayer.play();
-                playPauseBtn.textContent = '⏸';
+                nextTrack = (currentTrack + 1) % musicFiles.length;
             }
-            isPlaying = !isPlaying;
-        });
+            
+            playTrack(nextTrack);
+        }
 
-        // 모드 버튼들
-        sequentialBtn.addEventListener('click', () => {
-            setMode('sequential');
-        });
+        // 이벤트 리스너 설정
+        function setupEventListeners() {
+            // 카드 클릭 (랜덤 모드에서 제목 공개)
+            songCard.addEventListener('click', () => {
+                if (isRandomMode && currentTrack !== -1 && !revealedCards.has(currentTrack)) {
+                    songCard.classList.add('flipping');
+                    setTimeout(() => {
+                        revealedCards.add(currentTrack);
+                        updateSongDisplay();
+                        songCard.classList.remove('flipping');
+                    }, 300);
+                }
+            });
 
-        pauseBtn.addEventListener('click', () => {
-            setMode('pause');
-        });
+            // 재생/일시정지 버튼
+            playPauseBtn.addEventListener('click', async () => {
+                if (currentMode === 'pause' || currentTrack === -1) return;
+                
+                try {
+                    if (isPlaying) {
+                        audioPlayer.pause();
+                        playPauseBtn.textContent = '▶';
+                        isPlaying = false;
+                    } else {
+                        await audioPlayer.play();
+                        playPauseBtn.textContent = '⏸';
+                        isPlaying = true;
+                    }
+                } catch (error) {
+                    console.error('재생/정지 오류:', error);
+                    showMessage('재생 중 오류가 발생했습니다.', 'error');
+                }
+            });
 
-        randomBtn.addEventListener('click', () => {
-            setMode('random');
-        });
+            // 모드 버튼들
+            sequentialBtn.addEventListener('click', () => setMode('sequential'));
+            pauseBtn.addEventListener('click', () => setMode('pause'));
+            randomBtn.addEventListener('click', () => setMode('random'));
 
+            // 오디오 이벤트들
+            audioPlayer.addEventListener('timeupdate', () => {
+                if (audioPlayer.duration) {
+                    const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+                    progressBar.style.width = progress + '%';
+                    timeDisplay.textContent = formatTime(audioPlayer.currentTime);
+                }
+            });
+
+            audioPlayer.addEventListener('ended', () => {
+                isPlaying = false;
+                playPauseBtn.textContent = '▶';
+                playNext();
+            });
+
+            audioPlayer.addEventListener('error', (e) => {
+                console.error('오디오 오류:', e);
+                isPlaying = false;
+                playPauseBtn.textContent = '▶';
+                showMessage('음악 재생 중 오류가 발생했습니다.', 'error');
+            });
+
+            audioPlayer.addEventListener('loadstart', () => {
+                playPauseBtn.disabled = true;
+            });
+
+            audioPlayer.addEventListener('canplay', () => {
+                playPauseBtn.disabled = false;
+            });
+
+            // 진행 바 클릭으로 시간 이동
+            progressContainer.addEventListener('click', (e) => {
+                if (audioPlayer.duration) {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const clickX = e.clientX - rect.left;
+                    const percentage = clickX / rect.width;
+                    audioPlayer.currentTime = audioPlayer.duration * percentage;
+                }
+            });
+        }
+
+        // 모드 설정
         function setMode(mode) {
             currentMode = mode;
             isRandomMode = mode === 'random';
@@ -479,41 +730,22 @@
             updateSongDisplay();
         }
 
-        // 오디오 이벤트 리스너
-        audioPlayer.addEventListener('timeupdate', () => {
-            const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
-            progressBar.style.width = progress + '%';
-            
-            const minutes = Math.floor(audioPlayer.currentTime / 60);
-            const seconds = Math.floor(audioPlayer.currentTime % 60);
-            timeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        });
-
-        audioPlayer.addEventListener('ended', () => {
-            if (currentMode === 'pause') return;
-            
-            if (isRandomMode) {
-                // 랜덤 모드: 무작위 곡 선택
-                currentTrack = Math.floor(Math.random() * musicFiles.length);
-            } else {
-                // 순차 재생 모드: 다음 곡으로 이동 (마지막 곡이면 첫 곡으로)
-                currentTrack = (currentTrack + 1) % musicFiles.length;
-            }
-            
-            playTrack(currentTrack);
-        });
-
-        // 진행 바 클릭으로 시간 이동
-        document.getElementById('progressContainer').addEventListener('click', (e) => {
-            const rect = e.currentTarget.getBoundingClientRect();
-            const clickX = e.clientX - rect.left;
-            const percentage = clickX / rect.width;
-            audioPlayer.currentTime = audioPlayer.duration * percentage;
-        });
-
         // 초기화
-        createPlaylist();
-        updateSongDisplay();
+        function init() {
+            createPlaylist();
+            updateSongDisplay();
+            setupEventListeners();
+            
+            // GitHub URL 설정 확인
+            if (musicFiles[0] && musicFiles[0].includes('사용자명')) {
+                showMessage('⚠️ GitHub 설정 필요: 코드의 사용자명과 저장소명을 실제 값으로 변경하세요', 'error');
+            } else {
+                showMessage('GitHub에서 음악 파일 목록을 확인했습니다', 'loading');
+            }
+        }
+
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
