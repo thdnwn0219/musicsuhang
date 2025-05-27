@@ -376,21 +376,19 @@
         // 음악 파일 URL 설정
         // GitHub Pages 저장소의 'music' 폴더 내에 있는 파일들을 연결합니다.
         // 파일 이름과 정확히 일치해야 합니다. (띄어쓰기, 한글 등)
-        const baseUrl = 'https://thdnwn0219.github.io/musicsuhang/music/'; // GitHub Pages music 폴더 경로
-
         const musicFiles = [
-            '1. 고대 - 세이킬로스의 노래.mp3',
-            '2. 중세 - 그레고리오 성가의 키리에.mp3', 
-            '3. 르네상스 - 조스캥의 아베마리아.mp3',
-            '4. 르네상스 - 팔레스트리나의 마르첼로 미사 중 제5곡 아뉴스 데이 Ⅰ.mp3',
-            '5. 바로크 - 비발디 사계 中 봄 1악장 Allegro.mp3',
-            '6. 바로크 - 바흐의 토카타와 푸가 라단조.mp3',
-            '7. 바로크 - 헨델의 메시아 中 할렐루야.mp3',
-            '8. 고전주의 - 하이든의 놀람 교향곡 중 2악장.mp3',
-            '9. 고전주의 - 모차르트의 호른 협주곡 제2번 중 3악장.mp3',
-            '10. 고전주의 - 베토벤의 월광 소나타 중 1악장.mp3',
-            '11. 낭만주의 - 슈베르트의 겨울 나그네 중 제5번 보리수.mp3'
-        ].map(filename => baseUrl + encodeURIComponent(filename)); // 파일 이름 URL 인코딩 및 baseUrl 합치기
+            'https://thdnwn0219.github.io/musicsuhang/music/1. 고대 - 세이킬로스의 노래.mp3',
+            'https://thdnwn0219.github.io/musicsuhang/music/2. 중세 - 그레고리오 성가의 키리에.mp3',
+            'https://thdnwn0219.github.io/musicsuhang/music/3. 르네상스 - 조스캥의 아베마리아.mp3',
+            'https://thdnwn0219.github.io/musicsuhang/music/4. 르네상스 - 팔레스트리나의 마르첼로 미사 중 제5곡 아뉴스 데이 Ⅰ.mp3',
+            'https://thdnwn0219.github.io/musicsuhang/music/5. 바로크 - 비발디 사계 中 봄 1악장 Allegro.mp3',
+            'https://thdnwn0219.github.io/musicsuhang/music/6. 바로크 - 바흐의 토카타와 푸가 라단조.mp3',
+            'https://thdnwn0219.github.io/musicsuhang/music/7. 바로크 - 헨델의 메시아 中 할렐루야.mp3',
+            'https://thdnwn0219.github.io/musicsuhang/music/8. 고전주의 - 하이든의 놀람 교향곡 중 2악장.mp3',
+            'https://thdnwn0219.github.io/musicsuhang/music/9. 고전주의 - 모차르트의 호른 협주곡 제2번 중 3악장.mp3',
+            'https://thdnwn0219.github.io/musicsuhang/music/10. 고전주의 - 베토벤의 월광 소나타 중 1악장.mp3',
+            'https://thdnwn0219.github.io/musicsuhang/music/11. 낭만주의 - 슈베르트의 겨울 나그네 중 제5번 보리수.mp3'
+        ];
         
         // 각 파일의 실제 이름 (플레이리스트에 표시될 이름)
         // musicFiles 배열의 순서와 정확히 일치해야 합니다.
@@ -597,7 +595,7 @@
             if (isRandomMode) {
                 // 아직 공개되지 않은 트랙 중에서 랜덤 선택
                 const unrevealedTracks = Array.from({ length: musicFiles.length }, (_, i) => i)
-                                         .filter(i => !revealedCards.has(i));
+                                             .filter(i => !revealedCards.has(i));
                 if (unrevealedTracks.length > 0) {
                     nextTrack = unrevealedTracks[Math.floor(Math.random() * unrevealedTracks.length)];
                 } else {
@@ -730,7 +728,7 @@
             setupEventListeners();
             
             // 파일 URL이 올바르게 설정되었는지 확인하는 메시지
-            if (musicFiles.length > 0 && musicFiles.every(url => url.startsWith(baseUrl) && url.endsWith('.mp3'))) {
+            if (musicFiles.length > 0 && musicFiles.every(url => url.startsWith('https://') && url.endsWith('.mp3'))) {
                 showMessage('음악 파일을 불러올 준비가 되었습니다.', 'loading');
             } else {
                 showMessage('⚠️ 음악 파일 URL 설정에 문제가 있습니다. 파일 경로를 확인해주세요.', 'error');
@@ -742,3 +740,4 @@
     </script>
 </body>
 </html>
+
