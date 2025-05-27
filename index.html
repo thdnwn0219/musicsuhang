@@ -6,6 +6,7 @@
     <title>Music Suhang - 수행곡 연속재생</title>
     <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* 기존 CSS 스타일 유지 */
         * {
             margin: 0;
             padding: 0;
@@ -324,7 +325,7 @@
         <div class="header">
             <div class="year-text">2025년 서양음악사 + 감상 수행평가</div>
             <div class="logo-container">
-                <img src="./images/musicsuhang-logo.png" alt="musicsuhang" class="logo-img" onerror="this.style.display='none'">
+                <img src="./images/musicsuhang-logo.png" alt="musicsuhang" class="logo-img" onerror="this.src='https://placehold.co/150x80/8b4513/ffffff?text=Music+Suhang';">
             </div>
             <div class="subtitle">수행곡 연속재생</div>
         </div>
@@ -356,7 +357,6 @@
                 <div id="messageContainer"></div>
 
                 <div class="playlist" id="playlist">
-                    <!-- 플레이리스트 항목들이 여기에 동적으로 추가됩니다 -->
                 </div>
             </div>
         </div>
@@ -373,29 +373,40 @@
     <audio id="audioPlayer" preload="none"></audio>
 
     <script>
-        // GitHub Raw 파일 링크 설정
-        // 사용법: GitHub 저장소에 음악 파일 업로드 후, Raw 링크를 아래에 추가하세요
-        // 예: https://raw.githubusercontent.com/사용자명/저장소명/main/music/파일명.mp3
-        
-        const GITHUB_BASE_URL = 'https://raw.githubusercontent.com/사용자명/저장소명/main/music/';
-        
-        // 음악 파일 목록 (GitHub에 업로드된 실제 파일명으로 교체하세요)
+        // 음악 파일 URL 설정
+        // GitHub Pages 저장소의 'music' 폴더 내에 있는 파일들을 연결합니다.
+        // 파일 이름과 정확히 일치해야 합니다. (띄어쓰기, 한글 등)
+        const baseUrl = 'https://thdnwn0219.github.io/musicsuhang/music/'; // GitHub Pages music 폴더 경로
+
         const musicFiles = [
-            GITHUB_BASE_URL + '1. 클래식곡1.mp3',
-            GITHUB_BASE_URL + '2. 클래식곡2.mp3', 
-            GITHUB_BASE_URL + '3. 클래식곡3.mp3',
-            GITHUB_BASE_URL + '4. 클래식곡4.mp3',
-            GITHUB_BASE_URL + '5. 클래식곡5.mp3'
-        ];
+            '1. 고대 - 세이킬로스의 노래.mp3',
+            '2. 중세 - 그레고리오 성가의 키리에.mp3', 
+            '3. 르네상스 - 조스캥의 아베마리아.mp3',
+            '4. 르네상스 - 팔레스트리나의 마르첼로 미사 중 제5곡 아뉴스 데이 Ⅰ.mp3',
+            '5. 바로크 - 비발디 사계 中 봄 1악장 Allegro.mp3',
+            '6. 바로크 - 바흐의 토카타와 푸가 라단조.mp3',
+            '7. 바로크 - 헨델의 메시아 中 할렐루야.mp3',
+            '8. 고전주의 - 하이든의 놀람 교향곡 중 2악장.mp3',
+            '9. 고전주의 - 모차르트의 호른 협주곡 제2번 중 3악장.mp3',
+            '10. 고전주의 - 베토벤의 월광 소나타 중 1악장.mp3',
+            '11. 낭만주의 - 슈베르트의 겨울 나그네 중 제5번 보리수.mp3'
+        ].map(filename => baseUrl + encodeURIComponent(filename)); // 파일 이름 URL 인코딩 및 baseUrl 합치기
         
-        // 또는 직접 GitHub Raw 링크를 사용하는 방법:
-        /*
-        const musicFiles = [
-            'https://raw.githubusercontent.com/사용자명/저장소명/main/music/Bach - Air on G String.mp3',
-            'https://raw.githubusercontent.com/사용자명/저장소명/main/music/Mozart - Eine kleine Nachtmusik.mp3',
-            'https://raw.githubusercontent.com/사용자명/저장소명/main/music/Beethoven - Symphony No.9.mp3'
+        // 각 파일의 실제 이름 (플레이리스트에 표시될 이름)
+        // musicFiles 배열의 순서와 정확히 일치해야 합니다.
+        const musicTitles = [
+            '고대 - 세이킬로스의 노래',
+            '중세 - 그레고리오 성가의 키리에', 
+            '르네상스 - 조스캥의 아베마리아',
+            '르네상스 - 팔레스트리나의 마르첼로 미사 중 제5곡 아뉴스 데이 Ⅰ',
+            '바로크 - 비발디 사계 中 봄 1악장 Allegro',
+            '바로크 - 바흐의 토카타와 푸가 라단조',
+            '바로크 - 헨델의 메시아 中 할렐루야',
+            '고전주의 - 하이든의 놀람 교향곡 중 2악장',
+            '고전주의 - 모차르트의 호른 협주곡 제2번 중 3악장',
+            '고전주의 - 베토벤의 월광 소나타 중 1악장',
+            '낭만주의 - 슈베르트의 겨울 나그네 중 제5번 보리수'
         ];
-        */
 
         let currentMode = 'sequential';
         let currentTrack = -1;
@@ -432,110 +443,73 @@
         // 플레이리스트 생성
         function createPlaylist() {
             playlist.innerHTML = '';
-            musicFiles.forEach((file, index) => {
+            musicTitles.forEach((title, index) => { // musicFiles 대신 musicTitles 사용
                 const item = document.createElement('div');
                 item.className = 'playlist-item';
                 item.innerHTML = `
                     <div class="track-number">${index + 1}</div>
-                    <div>${removeTrackNumber(getFileName(file))}</div>
+                    <div>${title}</div>
                 `;
                 item.addEventListener('click', () => playTrack(index));
                 playlist.appendChild(item);
             });
         }
 
-        // 파일명에서 경로 제거
-        function getFileName(filePath) {
-            return filePath.split('/').pop();
-        }
-
-        // 트랙 번호 제거 함수
-        function removeTrackNumber(filename) {
-            return filename.replace(/^\d+\.\s*/, '').replace(/\.[^/.]+$/, '');
-        }
-
-        // GitHub Raw 링크 유효성 검사
-        async function validateGitHubUrl(url) {
-            try {
-                const response = await fetch(url, { method: 'HEAD' });
-                return response.ok;
-            } catch (error) {
-                return false;
-            }
-        }
-
-        // 오디오 로드 확인
-        function checkAudioLoad(src) {
-            return new Promise((resolve, reject) => {
-                const testAudio = new Audio();
-                testAudio.addEventListener('canplaythrough', () => resolve(true));
-                testAudio.addEventListener('error', () => reject(false));
-                testAudio.addEventListener('loadstart', () => {
-                    // GitHub에서 로딩 시작
-                    console.log('GitHub에서 음악 파일 로딩 중:', src);
-                });
-                testAudio.src = src;
-                testAudio.load();
-            });
-        }
-
         // 트랙 재생
         async function playTrack(index) {
             if (loadingTrack) return;
+            if (index < 0 || index >= musicFiles.length) { // 유효성 검사 추가
+                console.error("유효하지 않은 트랙 인덱스입니다:", index);
+                showMessage('재생할 곡이 없습니다.', 'error');
+                return;
+            }
             
             loadingTrack = true;
             currentTrack = index;
-            const file = musicFiles[index];
+            const fileUrl = musicFiles[index];
+            const trackTitle = musicTitles[index] || `알 수 없는 곡 ${index + 1}`;
             
             // 플레이리스트 항목 로딩 상태 표시
             updatePlaylistHighlight();
             const playlistItem = playlist.children[index];
             playlistItem.classList.add('loading');
             
-            showMessage('GitHub에서 음악을 불러오는 중...', 'loading');
+            showMessage(`"${trackTitle}"을(를) 불러오는 중...`, 'loading');
             
             try {
-                // GitHub URL 유효성 먼저 확인
-                console.log('GitHub URL 확인 중:', file);
-                const isValidUrl = await validateGitHubUrl(file);
-                
-                if (!isValidUrl) {
-                    throw new Error('GitHub 파일에 접근할 수 없습니다. URL을 확인하세요.');
-                }
-                
                 // 오디오 소스 설정
-                audioPlayer.src = file;
+                audioPlayer.src = fileUrl;
                 audioPlayer.load();
                 
-                // 오디오 로드 대기 (GitHub에서 로딩하므로 시간이 더 걸릴 수 있음)
+                // 오디오 로드 대기
                 await new Promise((resolve, reject) => {
                     const onCanPlay = () => {
                         audioPlayer.removeEventListener('canplaythrough', onCanPlay);
                         audioPlayer.removeEventListener('error', onError);
-                        console.log('GitHub 음악 파일 로드 완료:', file);
+                        console.log('음악 파일 로드 완료:', fileUrl);
                         resolve();
                     };
                     
                     const onError = (e) => {
                         audioPlayer.removeEventListener('canplaythrough', onCanPlay);
                         audioPlayer.removeEventListener('error', onError);
-                        console.error('GitHub 음악 파일 로드 실패:', file, e);
-                        reject(new Error('GitHub에서 파일을 불러올 수 없습니다'));
+                        console.error('음악 파일 로드 실패:', fileUrl, e);
+                        reject(new Error('파일을 불러올 수 없습니다. URL을 확인하세요.'));
                     };
                     
                     audioPlayer.addEventListener('canplaythrough', onCanPlay);
                     audioPlayer.addEventListener('error', onError);
                     
-                    // GitHub 로딩을 위한 더 긴 타임아웃 (20초)
+                    // 로딩 타임아웃
                     setTimeout(() => {
-                        console.log('GitHub 로딩 타임아웃');
-                        onError(new Error('로딩 타임아웃'));
-                    }, 20000);
+                        console.log('음악 로딩 타임아웃');
+                        onError(new Error('로딩 시간이 초과되었습니다.'));
+                    }, 15000); // 15초 타임아웃
                 });
                 
                 updateSongDisplay();
                 playlistItem.classList.remove('loading');
-                messageContainer.innerHTML = '';
+                messageContainer.innerHTML = ''; // 성공 시 메시지 제거
                 
                 if (currentMode !== 'pause') {
                     await audioPlayer.play();
@@ -550,18 +524,23 @@
                 playlistItem.classList.add('error');
                 
                 let errorMessage = '파일을 재생할 수 없습니다';
-                if (error.message.includes('GitHub')) {
-                    errorMessage = 'GitHub 파일 로드 실패: URL을 확인하세요';
+                if (error.message.includes('URL')) {
+                    errorMessage = '음악 파일 URL을 확인하세요.';
                 } else if (error.message.includes('타임아웃')) {
-                    errorMessage = '로딩 시간이 초과되었습니다';
+                    errorMessage = '로딩 시간이 초과되었습니다.';
                 }
                 
-                showMessage(`${errorMessage}: ${getFileName(file)}`, 'error');
+                showMessage(`${errorMessage}: "${trackTitle}"`, 'error');
                 
                 // 다음 곡으로 자동 이동 (순차 재생 모드에서)
                 if (currentMode === 'sequential' && index < musicFiles.length - 1) {
                     setTimeout(() => {
                         playTrack(index + 1);
+                    }, 2000);
+                } else if (currentMode === 'random' && musicFiles.length > 1) {
+                    // 랜덤 모드에서도 다음 곡으로 이동 (무한 루프 방지를 위해 최소 2곡 이상일 때)
+                    setTimeout(() => {
+                        playNext();
                     }, 2000);
                 }
             }
@@ -578,8 +557,7 @@
                 return;
             }
             
-            const filename = getFileName(musicFiles[currentTrack]);
-            const cleanTitle = removeTrackNumber(filename);
+            const cleanTitle = musicTitles[currentTrack] || `알 수 없는 곡 ${currentTrack + 1}`;
             
             if (isRandomMode && !revealedCards.has(currentTrack)) {
                 songTitle.textContent = '? ? ?';
@@ -596,7 +574,7 @@
         function updatePlaylistHighlight() {
             const items = playlist.querySelectorAll('.playlist-item');
             items.forEach((item, index) => {
-                item.classList.remove('active', 'error');
+                item.classList.remove('active', 'error', 'loading'); // 로딩 클래스도 제거
                 if (index === currentTrack) {
                     item.classList.add('active');
                 }
@@ -617,7 +595,17 @@
             
             let nextTrack;
             if (isRandomMode) {
-                nextTrack = Math.floor(Math.random() * musicFiles.length);
+                // 아직 공개되지 않은 트랙 중에서 랜덤 선택
+                const unrevealedTracks = Array.from({ length: musicFiles.length }, (_, i) => i)
+                                         .filter(i => !revealedCards.has(i));
+                if (unrevealedTracks.length > 0) {
+                    nextTrack = unrevealedTracks[Math.floor(Math.random() * unrevealedTracks.length)];
+                } else {
+                    // 모든 트랙이 공개되었으면, 전체 중에서 랜덤 선택하고 카드 리셋
+                    nextTrack = Math.floor(Math.random() * musicFiles.length);
+                    revealedCards.clear(); // 모든 카드를 다시 숨김
+                    showMessage('모든 곡을 들었습니다. 랜덤 모드를 다시 시작합니다!', 'info');
+                }
             } else {
                 nextTrack = (currentTrack + 1) % musicFiles.length;
             }
@@ -649,9 +637,14 @@
                         playPauseBtn.textContent = '▶';
                         isPlaying = false;
                     } else {
-                        await audioPlayer.play();
-                        playPauseBtn.textContent = '⏸';
-                        isPlaying = true;
+                        // 현재 트랙이 없으면 첫 곡 재생
+                        if (audioPlayer.src === '' || audioPlayer.paused && audioPlayer.currentTime === 0) {
+                            playTrack(0); // 첫 곡 재생 시도
+                        } else {
+                            await audioPlayer.play();
+                            playPauseBtn.textContent = '⏸';
+                            isPlaying = true;
+                        }
                     }
                 } catch (error) {
                     console.error('재생/정지 오류:', error);
@@ -676,14 +669,14 @@
             audioPlayer.addEventListener('ended', () => {
                 isPlaying = false;
                 playPauseBtn.textContent = '▶';
-                playNext();
+                playNext(); // 곡이 끝나면 다음 곡 재생
             });
 
             audioPlayer.addEventListener('error', (e) => {
                 console.error('오디오 오류:', e);
                 isPlaying = false;
                 playPauseBtn.textContent = '▶';
-                showMessage('음악 재생 중 오류가 발생했습니다.', 'error');
+                showMessage('음악 재생 중 오류가 발생했습니다. 파일이 유효한지 확인하세요.', 'error');
             });
 
             audioPlayer.addEventListener('loadstart', () => {
@@ -724,7 +717,7 @@
                 playPauseBtn.textContent = '▶';
             } else if (mode === 'random') {
                 randomBtn.classList.add('active');
-                revealedCards.clear();
+                revealedCards.clear(); // 랜덤 모드 진입 시 모든 카드 숨김 처리
             }
             
             updateSongDisplay();
@@ -736,11 +729,11 @@
             updateSongDisplay();
             setupEventListeners();
             
-            // GitHub URL 설정 확인
-            if (musicFiles[0] && musicFiles[0].includes('사용자명')) {
-                showMessage('⚠️ GitHub 설정 필요: 코드의 사용자명과 저장소명을 실제 값으로 변경하세요', 'error');
+            // 파일 URL이 올바르게 설정되었는지 확인하는 메시지
+            if (musicFiles.length > 0 && musicFiles.every(url => url.startsWith(baseUrl) && url.endsWith('.mp3'))) {
+                showMessage('음악 파일을 불러올 준비가 되었습니다.', 'loading');
             } else {
-                showMessage('GitHub에서 음악 파일 목록을 확인했습니다', 'loading');
+                showMessage('⚠️ 음악 파일 URL 설정에 문제가 있습니다. 파일 경로를 확인해주세요.', 'error');
             }
         }
 
